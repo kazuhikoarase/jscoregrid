@@ -74,37 +74,45 @@ $(function() {
   };
 
   var numberStyle = {
-      textAlign : 'right',
-      html : function(val) {
-        if (val == null) {
-          return '';
-        } else if (!val.match(/^\-?\d*$/) ) {
-          return 'NaN';
-        }
-        var neg = val.indexOf('-') == 0;
-        if (neg) {
-          val = val.substring(1);
-        }
-        var f = '';
-        while (val.length > 0) {
-          if (val.length > 3) {
-            f = ',' + val.substring(val.length - 3) + f;
-            val = val.substring(0, val.length - 3);
-          } else {
-            f = val + f;
-            val = '';
-          }
-        }
-        return neg? '<span style="color:red">-' + f  + '</span>' : f;
-      },
-      format : function(val) {
-        return val != null? val : '';
-      },
-      parse : function(s) {
-         s = toAscii(s).replace(/,/g, '');
-         return s.length > 0? s : null;
+    textAlign : 'right',
+    html : function(val) {
+      if (val == null) {
+        return '';
+      } else if (!val.match(/^\-?\d*$/) ) {
+        return 'NaN';
       }
-    };
+      var neg = val.indexOf('-') == 0;
+      if (neg) {
+        val = val.substring(1);
+      }
+      // trim leading zero.
+      while (val.length > 1 && val.indexOf(0) == '0') {
+        val = val.substring(1);
+      }
+      if (val == '0') {
+        // not negative.
+        neg = false;
+      }
+      var f = '';
+      while (val.length > 0) {
+        if (val.length > 3) {
+          f = ',' + val.substring(val.length - 3) + f;
+          val = val.substring(0, val.length - 3);
+        } else {
+          f = val + f;
+          val = '';
+        }
+      }
+      return neg? '<span style="color:red">-' + f  + '</span>' : f;
+    },
+    format : function(val) {
+      return val != null? val : '';
+    },
+    parse : function(s) {
+       s = toAscii(s).replace(/,/g, '');
+       return s.length > 0? s : null;
+    }
+  };
 
   var wide = '―，０１２３４５６７８９';
   var ascii = '-,0123456789';
