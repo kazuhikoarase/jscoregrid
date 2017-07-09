@@ -1,3 +1,14 @@
+//
+// jscoregrid
+//
+// Copyright (c) 2017 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+
 'use strict';
 
 namespace jscoregrid {
@@ -1146,6 +1157,8 @@ namespace jscoregrid {
               attr.tableRect.top + attr.paneRect.top;
             if (maxTop < top) {
               continue;
+            } else if (!gridModel.isCellHeightResizableAt(row) )  {
+              continue;
             }
             rowResizeAnchors.next().model(
                 { target : 'row',  row : row, top : top }).css({
@@ -1163,6 +1176,8 @@ namespace jscoregrid {
             var left = gridModel.calcWidth(attr.minCol, col + 1) +
               attr.tableRect.left + attr.paneRect.left;
             if (maxLeft < left) {
+              continue;
+            } else if (!gridModel.isCellWidthResizableAt(col) )  {
               continue;
             }
             colResizeAnchors.next().model(
@@ -1748,16 +1763,18 @@ namespace jscoregrid {
       setLockPosition : function(row : number, col : number) {
         gridModel._lockPosition = { row : row, col : col };
       },
-      getRowCount : function() {
-        return 100000;
-      },
-      getColCount : function() {
-        return 100000;
-      },
+      getRowCount : function() { return 10; },
+      getColCount : function() { return 10; },
       getMinCellWidthAt : function(col : number) { return 0; },
       getMaxCellWidthAt : function(col : number) { return 500; },
       getMinCellHeightAt : function(row : number) { return 0; },
       getMaxCellHeightAt : function(row : number) { return 500; },
+      isCellWidthResizableAt : function(col : number) {
+        return !(col < gridModel._headPosition.col - 1);
+      },
+      isCellHeightResizableAt : function(row : number) {
+        return !(row < gridModel._headPosition.row - 1);
+      },
       getDefaultCellWidthAt : function(col : number) {
         return debug? 50 + 20 * (col % 3) : 50;
       },

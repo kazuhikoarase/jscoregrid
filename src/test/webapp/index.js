@@ -4,6 +4,10 @@ $(function() {
   var $grid = jscoregrid.create();
   var gridModel = $grid.data('model');
 
+  // defines large table
+  gridModel.getRowCount = function() { return 100000; };
+  gridModel.getColCount = function() { return 100000; };
+
   gridModel.setHeadPosition(2, 1);
   gridModel.setLockPosition(2, 1);
 //    gridModel.setLockPosition(3, 2);
