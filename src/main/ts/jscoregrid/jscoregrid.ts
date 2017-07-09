@@ -803,8 +803,10 @@ namespace jscoregrid {
 
         } else if (event.keyCode == 33) {
           // pgup
+          $scr.scrollTop($scr.scrollTop() - 100);
         } else if (event.keyCode == 34) {
           // pgdn
+          $scr.scrollTop($scr.scrollTop() + 100);
         } else if (event.keyCode == 9) {
           // tab
           op = event.shiftKey? 'left' : 'right';
