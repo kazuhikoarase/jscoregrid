@@ -1,0 +1,20 @@
+{
+  "name": "jscoregrid",
+  "version": "0.1.0",
+  "description": "High Performance, Customizable Grid in JavaScript.",
+  "author": "Kazuhiko Arase",
+  "main": "lib/jscoregrid.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kazuhikoarase/jscoregrid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kazuhikoarase/jscoregrid/issues"
+  },
+  "keywords": [
+    "grid",
+    "worksheet",
+    "excel"
+  ],
+  "license": "MIT"
+}
