@@ -926,6 +926,7 @@ namespace jscoregrid {
                 ctrlKey = event.ctrlKey || event.metaKey;
               }
               if ( (event.keyCode == 67 || event.keyCode == 88) && ctrlKey) {
+                event.preventDefault();
                 if (selections[0].mode != 'cells') {
                   logger.debug('cancel copy:' + selections[0].mode);
                   return;
