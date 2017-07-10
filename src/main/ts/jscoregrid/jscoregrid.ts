@@ -982,11 +982,11 @@ namespace jscoregrid {
                   selections[0].update(
                     row + rows.length - 1,
                     col + cols.length - 1);
+                  gridModel.invalidate();
                 }
                 if (!gridModel.isCellEditableAt(row + r, col + c) ) {
                   continue;
                 }
-
                 var cs = getMergedCellStyleAt(row + r, col + c);
                 var value = cs.formatter.parse(cols[c]);
                 if (r == 0 && c == 0) {
