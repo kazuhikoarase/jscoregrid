@@ -1,4 +1,6 @@
 
+'use strict';
+
 $(function() {
 
   var $grid = jscoregrid.create();
@@ -76,13 +78,13 @@ $(function() {
 
   var numberStyle = {
     textAlign : 'right',
-    maxLength : 10,
+    maxLength : 15 + 1,
     formatter : {
       html : function(value) {
         if (value == null) {
           return '';
         } else if (!value.match(/^\-?\d*$/) ) {
-          return '<span style="color:blue;">NaN</span>';
+          return '<span style="color:red;">NaN</span>';
         }
         var neg = value.indexOf('-') == 0;
         if (neg) {
@@ -138,6 +140,8 @@ $(function() {
       return a;
     };
   }();
+
+  // show time!
 
   $('HEAD').append($('<style type="text/css"></style>').
       text('.' + jscoregrid.editorClass + '::-ms-clear{display:none};') );
