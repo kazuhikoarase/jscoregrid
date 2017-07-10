@@ -904,9 +904,6 @@ namespace jscoregrid {
         }
       };
 
-      // MSIE9 does not fire 'copy' event when textarea is blank...
-      var ctrlKey : boolean = false;
-
       var $editor = $('<textarea></textarea>').addClass(editorClass).
         data('model', editorModel).
         css(fontCss).
@@ -919,31 +916,30 @@ namespace jscoregrid {
           editing = true;
         });
 
-      $editor.on('keydown keyup cut copy', function(event) {
+      $editor.on('keydown cut copy', function(event) {
           if (!editing && selections.length == 1) {
-            if (event.type == 'keydown' || event.type == 'keyup') {
-              if (event.type == 'keydown') {
-                ctrlKey = event.ctrlKey || event.metaKey;
-              }
-              if ( (event.keyCode == 67 || event.keyCode == 88) && ctrlKey) {
+            if (event.type == 'keydown') {
+              if ( (event.keyCode == 67 || event.keyCode == 88) &&
+                  (event.ctrlKey || event.metaKey) ) {
+
                 event.preventDefault();
                 if (selections[0].mode != 'cells') {
                   logger.debug('cancel copy:' + selections[0].mode);
                   return;
                 }
-                if (event.type == 'keydown') {
-                  // clone selection
-                  var range = selections[0].getRange();
-                  copySelection = createSelection(range.minRow, range.minCol);
-                  copySelection.update(range.maxRow, range.maxCol);
-                  updateCopySelection();
-                  copyType = event.keyCode == 67? 'copy' : 'cut';
-                } else {
-                  copy(selections[0]);
-                  $editor.select();
-                  gridModel.invalidate();
-                }
+
+                // clone selection
+                var range = selections[0].getRange();
+                copySelection = createSelection(range.minRow, range.minCol);
+                copySelection.update(range.maxRow, range.maxCol);
+                updateCopySelection();
+                copyType = event.keyCode == 67? 'copy' : 'cut';
+
+                copy(selections[0]);
+                $editor.select();
+                gridModel.invalidate();
               }
+
             } else {
               event.preventDefault();
             }
