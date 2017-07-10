@@ -32,26 +32,7 @@ namespace jscoregrid {
   var resizeBarClass = prefix + '-resize-bar';
   export var editorClass = prefix + '-editor';
 
-  export var create = function() {
-
-    var labelCss = createSet([
-      'width', 'height',
-      'color',
-      'textAlign', 'fontWeight',
-      'cursor'
-    ]);
-
-    var editorCss = createSet([
-      'width', 'height',
-      'color', 'backgroundColor',
-      'textAlign'
-    ]);
-
-    var cellCss = createSet([
-      'borderTop', 'borderLeft', 'backgroundColor'
-    ]);
-
-    var cellAttr = createSet([ 'colspan', 'rowspan' ]);
+  export var create = function(opts : any) {
 
     var style = {
       padding : 2,
@@ -72,20 +53,40 @@ namespace jscoregrid {
       resizeBarStyle : 'dotted'
     };
 
+    if (opts && opts.style) {
+      style = $.extend(style, opts.style);
+    }
+
     if (debug) {
       style.padding = 3;
       style.borderWidth = 7;
       style.borderColor = '#00ff99';
-      style.selectionBorderWidth  = 5;
-      style.selectionBorderColor  = '#0099ff';
+      style.selectionBorderWidth = 5;
+      style.selectionBorderColor = '#0099ff';
     }
 
     var cellPadding = style.padding * 2 + style.borderWidth;
 
-    var fontCss = {
-      fontFamily : style.fontFamily,
-      fontSize : style.fontSize
-    };
+    var labelCss = createSet([
+      'width', 'height',
+      'color',
+      'textAlign',
+      'fontFamily', 'fontSize', 'fontWeight',
+      'cursor'
+    ]);
+
+    var editorCss = createSet([
+      'width', 'height',
+      'color', 'backgroundColor',
+      'textAlign',
+      'fontFamily', 'fontSize', 'fontWeight'
+    ]);
+
+    var cellCss = createSet([
+      'borderTop', 'borderLeft', 'backgroundColor'
+    ]);
+
+    var cellAttr = createSet([ 'colspan', 'rowspan' ]);
 
     // internal only
     var resizeUIOpacity = debug? 0.5 : 0;
@@ -133,7 +134,7 @@ namespace jscoregrid {
         position : 'absolute', pointerEvents : 'none',
         left : '0px', top : '0px', right : '0px', bottom : '0px'
       });
-      var $label = $('<span></span>').css(fontCss).css({
+      var $label = $('<span></span>').css({
         display : 'block', whiteSpace : 'nowrap',
         overflow : 'hidden', padding : style.padding + 'px' });
       var $cell =  $('<td></td>').
@@ -524,7 +525,9 @@ namespace jscoregrid {
 
     var getFontMetrics = function() {
       var $dummy = $('<div></div>').css({
-        position: 'absolute', display : 'none' }).css(fontCss);
+        position: 'absolute', display : 'none',
+        fontFamily : style.fontFamily,
+        fontSize : style.fontSize });
       $grid.append($dummy);
       return function(text : string) {
         $dummy.text(text);
@@ -622,7 +625,6 @@ namespace jscoregrid {
       editorModel.row = row;
       editorModel.col = col;
       editorModel.css = css;
-      editorModel.initialValue = getMergedCellValueAt(row, col);
       editorModel.invalidate();
 
       gridModel.invalidate();
@@ -630,20 +632,12 @@ namespace jscoregrid {
 
     var commitEdit = function() {
       var editorModel = $editor.data('model');
-      if (editorModel.isValid() ) {
-        var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
-        var value = cs.parse(editorModel.getValue() );
-        if (editorModel.initialValue != value) {
-          gridModel.setCellValueAt(editorModel.row, editorModel.col, value);
-          gridModel.invalidate();
-          $grid.trigger('valuechange', {
-            row : editorModel.row,
-            col : editorModel.col,
-            value : editorModel.value,
-            oldValue : editorModel.initialValue
-          });
-        }
+      if (!editorModel.isValid() ) {
+        return;
       }
+      var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
+      var value = cs.formatter.parse(editorModel.getValue() );
+      gridModel.setCellValueAt(editorModel.row, editorModel.col, value);
     }
 
     var cancelEdit = function() {
@@ -661,7 +655,7 @@ namespace jscoregrid {
             csv += '\t';
           }
           var cs = getMergedCellStyleAt(r, c);
-          csv += quote(cs.format(getMergedCellValueAt(r, c) ) );
+          csv += quote(cs.formatter.format(getMergedCellValueAt(r, c) ) );
         }
         csv += '\n';
       }
@@ -734,13 +728,16 @@ namespace jscoregrid {
       var cache = createCache();
 
       var editorModel = {
+
         row : -1,
         col : -1,
-        initialValue : null as any,
         css : {} as any,
 
         getValue : function() {
           return $editor.val();
+        },
+        setValue : function(value : string) {
+          $editor.val(value);
         },
         isValid : function() {
           return valid;
@@ -755,11 +752,12 @@ namespace jscoregrid {
           valid = true;
           editing = false;
           var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
-          var val = cs.format(editorModel.initialValue);
+          var value = getMergedCellValueAt(editorModel.row, editorModel.col);
+          editorModel.setValue(cs.formatter.format(value) );
           cache.data(editorModel.css, function(k, v) {
             $editor.css(k, v);
           });
-          $editor.val(val).focus().select();
+          $editor.focus().select();
         }
       };
 
@@ -906,7 +904,6 @@ namespace jscoregrid {
 
       var $editor = $('<textarea></textarea>').addClass(editorClass).
         data('model', editorModel).
-        css(fontCss).
         css({
           position : 'absolute', overflow : 'hidden',
           border : 'none', outline : 'none', resize : 'none',
@@ -924,7 +921,20 @@ namespace jscoregrid {
 
                 event.preventDefault();
                 if (selections[0].mode != 'cells') {
-                  logger.debug('cancel copy:' + selections[0].mode);
+                  logger.debug('cancel copy:selmode:' + selections[0].mode);
+                  return;
+                }
+
+                var editorModel = $editor.data('model');
+                if (!editorModel.isValid() ) {
+                  logger.debug('cancel copy:editor is invalid');
+                  return;
+                }
+                var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
+                var value =  getMergedCellValueAt(editorModel.row, editorModel.col);
+                var newValue = cs.formatter.parse(editorModel.getValue() );
+                if (value != newValue) {
+                  logger.debug('cancel copy:editor is dirty');
                   return;
                 }
 
@@ -973,14 +983,16 @@ namespace jscoregrid {
                     row + rows.length - 1,
                     col + cols.length - 1);
                 }
-                if (gridModel.isCellEditableAt(row + r, col + c) ) {
-                  var cs = getMergedCellStyleAt(row + r, col + c);
-                  var val = cs.parse(cols[c]);
-                  if (r == 0 && c == 0) {
-                    $(this).val(val);
-                  }
-                  gridModel.setCellValueAt(row + r, col + c, val);
+                if (!gridModel.isCellEditableAt(row + r, col + c) ) {
+                  continue;
                 }
+
+                var cs = getMergedCellStyleAt(row + r, col + c);
+                var value = cs.formatter.parse(cols[c]);
+                if (r == 0 && c == 0) {
+                  editorModel.setValue(cs.formatter.format(value) );
+                }
+                gridModel.setCellValueAt(row + r, col + c, value);
               }
             }
           }
@@ -1269,7 +1281,7 @@ namespace jscoregrid {
 
                 if (!invisible) {
                   cellModel.setCellValue(
-                    cs.html(getMergedCellValueAt(row, col) ) );
+                    cs.formatter.html(getMergedCellValueAt(row, col) ) );
                 }
 
                 showSelectionBackground(cs, cellModel);
@@ -1640,19 +1652,19 @@ namespace jscoregrid {
       var cs : CellStyle = {
         row : row,
         col : col,
+        borderLeft : style.borderWidth + 'px solid ' + style.borderColor,
+        borderTop : style.borderWidth + 'px solid ' + style.borderColor,
         color : '',
         backgroundColor : '',
         cursor : '',
         textAlign : '',
+        fontFamily : style.fontFamily,
+        fontSize : style.fontSize,
         fontWeight : '',
         rowspan : 1,
         colspan : 1,
         editable : true,
-        parse : gridModel.parse,
-        format : gridModel.format,
-        html : gridModel.html,
-        borderLeft : style.borderWidth + 'px solid ' + style.borderColor,
-        borderTop : style.borderWidth + 'px solid ' + style.borderColor
+        formatter : gridModel.getDefaultFormatter()
       };
       var headPosition = getHeadPosition();
       if (row < headPosition.row && col < headPosition.col) {
@@ -1756,6 +1768,7 @@ namespace jscoregrid {
       _widths : {} as { [col : number] : number },
       _heights : {} as { [row : number] : number },
       _valid : true,
+
       setHeadPosition : function(row : number, col : number) {
         gridModel._headPosition = { row : row, col : col };
       },
@@ -1846,13 +1859,24 @@ namespace jscoregrid {
         return typeof value != 'undefined' ? value : null;
       },
       setCellValueAt : function(row : number, col : number, value : any) {
+        var oldValue = gridModel.getCellValueAt(row, col);
+        if (oldValue === value) {
+          return;
+        }
         if (value != null) {
           gridModel._values[getRC(row, col)] = value;
         } else {
           delete gridModel._values[getRC(row, col)];
         }
         gridModel.invalidate();
+        $grid.trigger('valuechange', {
+          row : row,
+          col : col,
+          value : value,
+          oldValue : oldValue
+        });
       },
+
       calcWidth : function(start : number, end : number, cache? : any) {
         cache = cache || gridModel._calcWidthCache;
         var key = start + ':' + end;
@@ -1883,15 +1907,20 @@ namespace jscoregrid {
         return getMergedCellStyleAt(row, col).editable;
       },
 
-      parse : function(val : string) {
-        val = val.replace(/[\s\u3000]+$/, '');
-        return val.length == 0? null : val;
+      parse : function(value : string) {
+        value = value.replace(/[\s\u3000]+$/, ''); // rtrim
+        return value.length == 0? null : value;
       },
-      format : function(val : any) {
-        return typeof val === 'undefined' || val === null? '' : '' + val;
+      format : function(value : any) {
+        return value != null? '' + value :  '';
       },
-      html : function(val : any) {
-        return html(gridModel.format(val) );
+      getDefaultFormatter : function() {
+        var formatter : Formatter<any> = {
+          parse: gridModel.parse,
+          format: gridModel.format,
+          html: (value) => html(formatter.format(value) )
+        };
+        return formatter;
       },
 
       validate : function() {
@@ -2169,13 +2198,19 @@ namespace jscoregrid {
     backgroundColor? : string;
     cursor? : string;
     textAlign? : string;
+    fontFamily? : string,
+    fontSize? : string,
     fontWeight? : string;
     rowspan? : number;
     colspan? : number;
     editable? : boolean;
-    html? : (val : any) => string;
-    format? : (val : any) => string;
-    parse? : (val : string) => any;
+    formatter? : Formatter<any>;
+  }
+
+  interface Formatter<T> {
+    html : (value : T) => string;
+    format : (value : T) => string;
+    parse : (value : string) => T;
   }
 
   interface MergedCellStyle extends CellStyle {

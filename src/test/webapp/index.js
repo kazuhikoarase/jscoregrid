@@ -75,60 +75,64 @@ $(function() {
 
   var numberStyle = {
     textAlign : 'right',
-    html : function(val) {
-      if (val == null) {
-        return '';
-      } else if (!val.match(/^\-?\d*$/) ) {
-        return 'NaN';
-      }
-      var neg = val.indexOf('-') == 0;
-      if (neg) {
-        val = val.substring(1);
-      }
-      // trim leading zero.
-      while (val.length > 1 && val.indexOf(0) == '0') {
-        val = val.substring(1);
-      }
-      if (val == '0') {
-        // not negative.
-        neg = false;
-      }
-      var f = '';
-      while (val.length > 0) {
-        if (val.length > 3) {
-          f = ',' + val.substring(val.length - 3) + f;
-          val = val.substring(0, val.length - 3);
-        } else {
-          f = val + f;
-          val = '';
+    formatter : {
+      html : function(val) {
+        if (val == null) {
+          return '';
+        } else if (!val.match(/^\-?\d*$/) ) {
+          return 'NaN';
         }
+        var neg = val.indexOf('-') == 0;
+        if (neg) {
+          val = val.substring(1);
+        }
+        // trim leading zero.
+        while (val.length > 1 && val.indexOf(0) == '0') {
+          val = val.substring(1);
+        }
+        if (val == '0') {
+          // not negative.
+          neg = false;
+        }
+        var f = '';
+        while (val.length > 0) {
+          if (val.length > 3) {
+            f = ',' + val.substring(val.length - 3) + f;
+            val = val.substring(0, val.length - 3);
+          } else {
+            f = val + f;
+            val = '';
+          }
+        }
+        return neg? '<span style="color:red">-' + f  + '</span>' : f;
+      },
+      format : function(val) {
+        return val != null? val : '';
+      },
+      parse : function(s) {
+         s = toAscii(s).replace(/,/g, '');
+         return s.length > 0? s : null;
       }
-      return neg? '<span style="color:red">-' + f  + '</span>' : f;
-    },
-    format : function(val) {
-      return val != null? val : '';
-    },
-    parse : function(s) {
-       s = toAscii(s).replace(/,/g, '');
-       return s.length > 0? s : null;
     }
   };
 
-  var wide = '―，０１２３４５６７８９';
-  var ascii = '-,0123456789';
-  var toAscii = function(s) {
-    var a = '';
-    for (var i = 0; i < s.length; i += 1) {
-      var c = s.charAt(i);
-      var index = wide.indexOf(c);
-      if (index != -1) {
-        a += ascii.charAt(index);
-      } else {
-        a += c;
+  var toAscii = function() {
+    var wide = '＋―，．０１２３４５６７８９';
+    var ascii = '+-,.0123456789';
+    return function(s) {
+      var a = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        var index = wide.indexOf(c);
+        if (index != -1) {
+          a += ascii.charAt(index);
+        } else {
+          a += c;
+        }
       }
-    }
-    return a;
-  };
+      return a;
+    };
+  }();
 
   $('HEAD').append($('<style type="text/css"></style>').
       text('.' + jscoregrid.editorClass + '::-ms-clear{display:none};') );

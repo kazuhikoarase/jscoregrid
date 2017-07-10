@@ -1,3 +1,3 @@
 jscoregrid
 ===
-high-performance, customizable and.
+High Performance, Customizable Grid in JavaScript.
