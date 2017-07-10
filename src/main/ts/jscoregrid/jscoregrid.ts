@@ -461,7 +461,7 @@ namespace jscoregrid {
         var cellModel = $cell.data('model');
         var headPosition = getHeadPosition();
 
-        selectStart(cellModel.row, cellModel.col, event.ctrlKey);
+        selectStart(cellModel.row, cellModel.col, event.ctrlKey || event.metaKey);
 
         if (cellModel.row < headPosition.row &&
             cellModel.col < headPosition.col) {
@@ -769,7 +769,7 @@ namespace jscoregrid {
         var $editor = $(event.target);
         var editorModel = $editor.data('model');
 
-        if (event.ctrlKey) {
+        if (event.ctrlKey || event.metaKey) {
           return;
         }
 
@@ -923,7 +923,7 @@ namespace jscoregrid {
           if (!editing && selections.length == 1) {
             if (event.type == 'keydown' || event.type == 'keyup') {
               if (event.type == 'keydown') {
-                ctrlKey = event.ctrlKey;
+                ctrlKey = event.ctrlKey || event.metaKey;
               }
               if ( (event.keyCode == 67 || event.keyCode == 88) && ctrlKey) {
                 if (selections[0].mode != 'cells') {
