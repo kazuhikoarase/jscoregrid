@@ -141,8 +141,6 @@ $(function() {
     };
   }();
 
-  // show time!
-
   $('HEAD').append($('<style type="text/css"></style>').
       text('.' + jscoregrid.editorClass + '::-ms-clear{display:none};') );
   $('BODY').append($grid);
