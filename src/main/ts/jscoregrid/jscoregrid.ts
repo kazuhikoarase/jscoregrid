@@ -335,6 +335,24 @@ namespace jscoregrid {
       });
     };
 
+    var createRange = function(minRow : number, maxRow : number,
+        minCol : number, maxCol : number) : Range {
+      return {
+        minRow : minRow,
+        maxRow : maxRow,
+        minCol : minCol,
+        maxCol : maxCol,
+        contains : function(row, col) {
+          return minRow <= row && row <= maxRow &&
+              minCol <= col && col <= maxCol;
+        },
+        containsRange : function(range : Range) {
+          return minRow <= range.minRow && range.maxRow <= maxRow &&
+              minCol <= range.minCol && range.maxCol <= maxCol;
+        }
+      };
+    };
+
     var createSelection = function(row : number, col : number) : Selection {
 
       var headPosition = getHeadPosition();
@@ -415,16 +433,7 @@ namespace jscoregrid {
         },
         getRange : function() {
           validate();
-          return {
-            minRow : minRow,
-            maxRow : maxRow,
-            minCol : minCol,
-            maxCol : maxCol,
-            contains : function(row, col) {
-              return minRow <= row && row <= maxRow &&
-                  minCol <= col && col <= maxCol;
-            }
-          };
+          return createRange(minRow, maxRow, minCol, maxCol);
         }
       };
     };
@@ -462,7 +471,8 @@ namespace jscoregrid {
         var cellModel = $cell.data('model');
         var headPosition = getHeadPosition();
 
-        selectStart(cellModel.row, cellModel.col, event.ctrlKey || event.metaKey);
+        selectStart(cellModel.row, cellModel.col,
+          event.ctrlKey || event.metaKey);
 
         if (cellModel.row < headPosition.row &&
             cellModel.col < headPosition.col) {
@@ -636,8 +646,13 @@ namespace jscoregrid {
         return;
       }
       var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
-      var value = cs.formatter.parse(editorModel.getValue() );
-      gridModel.setCellValueAt(editorModel.row, editorModel.col, value);
+      var value = editorModel.getValue();
+      if (value.length > cs.maxLength) {
+        value = value.substring(0, cs.maxLength);
+        editorModel.setValue(value);
+      }
+      gridModel.setCellValueAt(editorModel.row, editorModel.col,
+        cs.formatter.parse(value) );
     }
 
     var cancelEdit = function() {
@@ -837,6 +852,12 @@ namespace jscoregrid {
         }
 
         if (op == null) {
+          var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
+          var value = editorModel.getValue();
+          if (value.length >= cs.maxLength) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
           return;
         }
 
@@ -913,6 +934,7 @@ namespace jscoregrid {
           editing = true;
         });
 
+      // cut copy paste support.
       $editor.on('keydown cut copy', function(event) {
           if (!editing && selections.length == 1) {
             if (event.type == 'keydown') {
@@ -1664,6 +1686,7 @@ namespace jscoregrid {
         rowspan : 1,
         colspan : 1,
         editable : true,
+        maxLength : Number.MAX_VALUE,
         formatter : gridModel.getDefaultFormatter()
       };
       var headPosition = getHeadPosition();
@@ -1937,6 +1960,13 @@ namespace jscoregrid {
     };
 
     $grid.data('model', gridModel);
+
+    if (debug) {
+      $grid.on('valuechange', function(event, data) {
+        logger.debug(JSON.stringify(data) );
+      });
+    }
+
     return $grid;
   };
 
@@ -2204,6 +2234,7 @@ namespace jscoregrid {
     rowspan? : number;
     colspan? : number;
     editable? : boolean;
+    maxLength? : number;
     formatter? : Formatter<any>;
   }
 
@@ -2232,6 +2263,7 @@ namespace jscoregrid {
     minCol : number;
     maxCol : number;
     contains : (row : number, col : number) => boolean;
+    containsRange : (range : Range) => boolean;
   }
 
   interface CellsAttr {

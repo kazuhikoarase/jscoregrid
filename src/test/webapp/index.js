@@ -64,7 +64,8 @@ $(function() {
   gridModel.setCellWidthAt(10, 120);
   gridModel.setCellValueAt(0, 10, 'NumColumn');
   gridModel.setCellStyleAt(0, 10, {
-    backgroundColor: '#ff00cc', rowspan : 2, verticalAlign : 'middle', fontWeight:'bold' });
+    backgroundColor: '#ff00cc', rowspan : 2,
+    verticalAlign : 'middle', fontWeight:'bold' });
   var getCellStyleAt = gridModel.getCellStyleAt;
   gridModel.getCellStyleAt = function(row, col) {
     if (col == 10 && row >= 2) {
@@ -75,42 +76,46 @@ $(function() {
 
   var numberStyle = {
     textAlign : 'right',
+    maxLength : 10,
     formatter : {
-      html : function(val) {
-        if (val == null) {
+      html : function(value) {
+        if (value == null) {
           return '';
-        } else if (!val.match(/^\-?\d*$/) ) {
-          return 'NaN';
+        } else if (!value.match(/^\-?\d*$/) ) {
+          return '<span style="color:blue;">NaN</span>';
         }
-        var neg = val.indexOf('-') == 0;
+        var neg = value.indexOf('-') == 0;
         if (neg) {
-          val = val.substring(1);
+          value = value.substring(1);
+        }
+        if (value.length >= numberStyle.maxLength - 1) {
+          value = value.substring(0, numberStyle.maxLength - 1);
         }
         // trim leading zero.
-        while (val.length > 1 && val.indexOf(0) == '0') {
-          val = val.substring(1);
+        while (value.length > 1 && value.indexOf(0) == '0') {
+          value = value.substring(1);
         }
-        if (val == '0') {
+        if (value == '0') {
           // not negative.
           neg = false;
         }
         var f = '';
-        while (val.length > 0) {
-          if (val.length > 3) {
-            f = ',' + val.substring(val.length - 3) + f;
-            val = val.substring(0, val.length - 3);
+        while (value.length > 0) {
+          if (value.length > 3) {
+            f = ',' + value.substring(value.length - 3) + f;
+            value = value.substring(0, value.length - 3);
           } else {
-            f = val + f;
-            val = '';
+            f = value + f;
+            value = '';
           }
         }
         return neg? '<span style="color:red">-' + f  + '</span>' : f;
       },
-      format : function(val) {
-        return val != null? val : '';
+      format : function(value) {
+        return value != null? value : '';
       },
       parse : function(s) {
-         s = toAscii(s).replace(/,/g, '');
+         s = toAscii(s);
          return s.length > 0? s : null;
       }
     }
