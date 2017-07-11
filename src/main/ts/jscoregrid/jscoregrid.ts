@@ -616,11 +616,6 @@ namespace jscoregrid {
 
     var beginEdit = function(row : number, col : number) {
 
-      if (!gridModel.isCellEditableAt(row, col) ) {
-        gridModel.invalidate();
-        return;
-      }
-
       makeVisible(row, col);
 
       var cs : any = getMergedCellStyleAt(row, col);
@@ -777,10 +772,11 @@ namespace jscoregrid {
       };
 
       var editor_keydownHandler = function(event : JQueryEventObject) {
-        logger.debug(event.type + ' - ' + event.keyCode);
 
         var $editor = $(event.target);
         var editorModel = $editor.data('model');
+        var editable = gridModel.isCellEditableAt(
+          editorModel.row, editorModel.col);
 
         if (event.ctrlKey || event.metaKey) {
           return;
@@ -790,24 +786,28 @@ namespace jscoregrid {
         var move = false;
 
         if (event.keyCode == 113) {
+
           // F2
-          if (!editing) {
+          if (editable && !editing) {
             event.preventDefault();
             editing = true;
             var val = $editor.val();
             $editor.val('').val(val);
+            return;
           }
-          return;
 
         } else if (event.keyCode == 27) {
+
           // esc
-          event.preventDefault();
-          cancelEdit();
-          return;
+          if (editable) {
+            event.preventDefault();
+            cancelEdit();
+            return;
+          }
 
         } else if (event.keyCode == 46) {
           // delete
-          if (!editing && selections.length == 1) {
+          if (editable && !editing && selections.length == 1) {
             event.preventDefault();
             erase(selections[0]);
             beginEdit(editorModel.row, editorModel.col);
@@ -827,7 +827,7 @@ namespace jscoregrid {
           // enter
           if (event.altKey) {
             event.preventDefault();
-            if (editing) {
+            if (editable && editing) {
               replaceText($editor[0], '\n');
             }
             return;
@@ -852,6 +852,11 @@ namespace jscoregrid {
         }
 
         if (op == null) {
+          if (!editable) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
           var cs = getMergedCellStyleAt(editorModel.row, editorModel.col);
           var value = editorModel.getValue();
           if (value.length >= cs.maxLength) {
@@ -1786,8 +1791,8 @@ namespace jscoregrid {
       _calcWidthCache : {} as any,
       _calcHeightCache : {} as any,
       _spaned : {} as { [ rc : string ] : boolean },
-      _cells : {}  as { [rc : string] : CellStyle },
-      _values : {}  as { [rc : string] : any },
+      _styles : {}  as { [rc : string] : CellStyle },
+      _values : {}  as { [rc : string] : CellValue },
       _widths : {} as { [col : number] : number },
       _heights : {} as { [row : number] : number },
       _valid : true,
@@ -1859,10 +1864,10 @@ namespace jscoregrid {
         gridModel.invalidate();
       },
       getCellStyleAt : function(row : number, col : number) : CellStyle {
-        return gridModel._cells[getRC(row, col)] || {};
+        return gridModel._styles[getRC(row, col)] || {};
       },
       setCellStyleAt : function(row : number, col : number, cs : CellStyle) {
-        gridModel._cells[getRC(row, col)] = cs;
+        gridModel._styles[getRC(row, col)] = cs;
         if (typeof cs.rowspan != 'undefined') {
           gridModel._maxRowspan = Math.max(gridModel._maxRowspan, cs.rowspan);
         }
@@ -1878,8 +1883,8 @@ namespace jscoregrid {
         return gridModel._maxColspan;
       },
       getCellValueAt : function(row : number, col : number) : any {
-        var value = gridModel._values[getRC(row, col)];
-        return typeof value != 'undefined' ? value : null;
+        var cv = gridModel._values[getRC(row, col)];
+        return typeof cv != 'undefined' ? cv.value : null;
       },
       setCellValueAt : function(row : number, col : number, value : any) {
         var oldValue = gridModel.getCellValueAt(row, col);
@@ -1887,7 +1892,8 @@ namespace jscoregrid {
           return;
         }
         if (value != null) {
-          gridModel._values[getRC(row, col)] = value;
+          gridModel._values[getRC(row, col)] =
+            { row : row, col : col, value : value };
         } else {
           delete gridModel._values[getRC(row, col)];
         }
@@ -1899,7 +1905,12 @@ namespace jscoregrid {
           oldValue : oldValue
         });
       },
-
+      forEachCell : function(callback : (cellValue : CellValue) => void) {
+        var values = gridModel._values;
+        for (var k in values) {
+          callback(values[k]);
+        }
+      },
       calcWidth : function(start : number, end : number, cache? : any) {
         cache = cache || gridModel._calcWidthCache;
         var key = start + ':' + end;
@@ -2217,7 +2228,13 @@ namespace jscoregrid {
   interface Position {
     row : number;
     col : number;
-  };
+  }
+
+  interface CellValue {
+    row : number;
+    col : number;
+    value : any;
+  }
 
   interface CellStyle {
     row? : number;

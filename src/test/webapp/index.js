@@ -28,32 +28,28 @@ $(function() {
   gridModel.setCellStyleAt(0, 1, {
     colspan : 3, rowspan : 2,
     textAlign : 'center',
-    color : color, backgroundColor : bgColor,
-    editable : false
+    color : color, backgroundColor : bgColor
   });
 
   gridModel.setCellValueAt(0, 4, 'Group1');
   gridModel.setCellStyleAt(0, 4, {
     colspan : 2,
     textAlign : 'left',
-    color : color, backgroundColor : bgColor,
-    editable : false
+    color : color, backgroundColor : bgColor
   });
 
   gridModel.setCellValueAt(0, 6, 'Group2');
   gridModel.setCellStyleAt(0, 6, {
     colspan : 4,
     textAlign : 'left',
-    color : color, backgroundColor : bgColor,
-    editable : false
+    color : color, backgroundColor : bgColor
   });
 
   for (var i = 0; i < 6; i += 1) {
     var val = '#' + (i + 1);
     var cs = {
         textAlign : 'center',
-        color : color, backgroundColor : bgColor,
-        editable : false
+        color : color, backgroundColor : bgColor
       };
     if (i == 0 || i == 2) {
       val = '';
@@ -71,10 +67,29 @@ $(function() {
   var getCellStyleAt = gridModel.getCellStyleAt;
   gridModel.getCellStyleAt = function(row, col) {
     if (col == 10 && row >= 2) {
+      numberStyle.editable = row >= 3;
       return numberStyle;
     }
     return getCellStyleAt(row, col);
   };
+
+  gridModel.setCellValueAt(2, 9, 'SUM:');
+  gridModel.setCellStyleAt(2, 9, {
+    colspan : 1,
+    textAlign : 'right',
+    backgroundColor : '#00ffcc',
+    editable : false
+  });
+
+  $grid.on('valuechange', function(event, data) {
+    var sum = 0;
+    gridModel.forEachCell(function(cell) {
+      if (cell.col == 10 && cell.row >= 3) {
+        sum += +cell.value;
+      }
+    });
+    gridModel.setCellValueAt(2, 10, '' + sum);
+  });
 
   var numberStyle = {
     textAlign : 'right',
