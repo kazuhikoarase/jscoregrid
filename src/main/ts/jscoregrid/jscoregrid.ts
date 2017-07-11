@@ -889,28 +889,28 @@ namespace jscoregrid {
         if (op == 'left') {
           while (col - 1 >= headPosition.col) {
             col -= 1;
-            if (!isSpaned(row, col) ) {
+            if (!getSpaned(row, col) ) {
               break;
             }
           }
         } else if (op == 'right') {
           while (col + 1 <= gridModel.getColCount() ) {
             col += 1;
-            if (!isSpaned(row, col) ) {
+            if (!getSpaned(row, col) ) {
               break;
             }
           }
         } else if (op == 'up') {
           while (row - 1 >= headPosition.row) {
             row -= 1;
-            if (!isSpaned(row, col) ) {
+            if (!getSpaned(row, col) ) {
               break;
             }
           }
         } else if (op == 'down') {
           while (row + 1 <= gridModel.getRowCount() ) {
             row += 1;
-            if (!isSpaned(row, col) ) {
+            if (!getSpaned(row, col) ) {
               break;
             }
           }
@@ -1290,7 +1290,9 @@ namespace jscoregrid {
             if (attr.minRow <= row && row <= attr.maxRow &&
                 attr.minCol <= col && col <= attr.maxCol) {
 
-              if (!isSpaned(row, col) ) {
+              var spaned = getSpaned(row, col);
+
+              if (!spaned) {
 
                 cs = getMergedCellStyleAt(row, col);
                 setSpaned(cs);
@@ -1321,6 +1323,10 @@ namespace jscoregrid {
                     r, c, row, col, size.width, size.height);
                 }
 
+              } else if (spaned.row < attr.minRow ||
+                  spaned.col < attr.minCol) {
+                cs = getEmptyCellStyle(row, col);
+                cellsModel.getCellModelAt(cRow, cCol).setCellStyle(cs);
               } else {
                 cCol -= 1;
               }
@@ -1352,7 +1358,7 @@ namespace jscoregrid {
           height : gridModel.getCellHeightAt(row) + 'px'
         };
       };
-      
+
       var calcSelectionRect = function(
           attr : CellsAttr, selection : Selection) {
 
@@ -1759,13 +1765,14 @@ namespace jscoregrid {
       for (var r = 0; r < rowspan; r += 1) {
         for (var c = 0; c < colspan; c += 1) {
           if (c != 0 || r != 0) {
-            gridModel._spaned[(cs.row + r) + ':' + (cs.col + c)] = true;
+            gridModel._spaned[(cs.row + r) + ':' + (cs.col + c)] = 
+              { row : cs.row, col : cs.col };
           }
         }
       }
     };
 
-    var isSpaned = function(row : number, col : number) {
+    var getSpaned = function(row : number, col : number) {
       return gridModel._spaned[row + ':' + col];
     };
 
@@ -1790,7 +1797,7 @@ namespace jscoregrid {
       _maxColspan : 1,
       _calcWidthCache : {} as any,
       _calcHeightCache : {} as any,
-      _spaned : {} as { [ rc : string ] : boolean },
+      _spaned : {} as { [ rc : string ] : Position },
       _styles : {}  as { [rc : string] : CellStyle },
       _values : {}  as { [rc : string] : CellValue },
       _widths : {} as { [col : number] : number },
