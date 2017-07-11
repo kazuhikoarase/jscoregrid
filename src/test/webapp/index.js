@@ -82,13 +82,15 @@ $(function() {
   });
 
   $grid.on('valuechange', function(event, data) {
-    var sum = 0;
-    gridModel.forEachCell(function(cell) {
-      if (cell.col == 10 && cell.row >= 3) {
-        sum += +cell.value;
-      }
-    });
-    gridModel.setCellValueAt(2, 10, '' + sum);
+    if (data.col == 10) {
+      var sum = 0;
+      gridModel.forEachCell(function(cell) {
+        if (cell.col == 10 && cell.row >= 3) {
+          sum += +cell.value;
+        }
+      });
+      gridModel.setCellValueAt(2, 10, '' + sum);
+    }
   });
 
   var numberStyle = {
