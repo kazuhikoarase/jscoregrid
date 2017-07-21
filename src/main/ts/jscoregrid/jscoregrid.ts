@@ -528,7 +528,7 @@ namespace jscoregrid {
           on('mouseup', mouseupHandler);
       }).on('wheel', function(event) {
         event.preventDefault();
-        var oe : any = event.originalEvent;
+        var oe : any = event.originalEvent || event;
         $scr.scrollLeft($scr.scrollLeft() + oe.deltaX);
         $scr.scrollTop($scr.scrollTop() + oe.deltaY);
     });
