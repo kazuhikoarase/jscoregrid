@@ -540,11 +540,10 @@ namespace jscoregrid {
         fontSize : style.fontSize });
       $grid.append($dummy);
       return function(text : string) {
-        $dummy.text(text);
-        return {
-          width : $dummy.width(),
-          height : $dummy.height()
-        };
+        $dummy.css('display', '').text(text);
+        var fm = { width : $dummy.width(), height : $dummy.height() };
+        $dummy.css('display', 'none').text('');
+        return fm;
       };
     }();
 
@@ -697,10 +696,10 @@ namespace jscoregrid {
         if ($b.children().length == 1) {
           $b.append($b.children().clone() );
         }
-        $b.children().each(function() {
+        $b.children().each(function(i : number) {
           var w = style.selectionBorderWidth - 1;
-          var color = colors[($(this).index() + index) % colors.length];
-          if ($(this).index() == 0) {
+          var color = colors[(i + index) % colors.length];
+          if (i == 0) {
             $(this).css({border : w + 'px solid ' + color, margin : '1px'});
           } else {
             $(this).css({border : w + 'px dashed ' + color, margin : '1px'});
@@ -986,7 +985,7 @@ namespace jscoregrid {
           if (!editing && selections.length == 1) {
             event.preventDefault();
             var win : any = window;
-            var oe : any = event.originalEvent;
+            var oe : any = event.originalEvent || event;
             var text : string = null;
             if (win.clipboardData && win.clipboardData.getData) {
               text = win.clipboardData.getData('Text');
